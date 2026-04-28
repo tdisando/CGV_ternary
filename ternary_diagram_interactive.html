@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crystal · Glass · Vesicle — Ternary Diagram</title>
+<style>
+  /* ── reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #1a1a1e;
+    --surface:   #25252b;
+    --border:    #38383f;
+    --accent1:   #e63946;
+    --accent2:   #a8dadc;
+    --text:      #e8e8e0;
+    --muted:     #888;
+    --font-head: 'Crimson Pro', Georgia, serif;
+    --font-body: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text);
+               font-family: var(--font-body); }
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  /* ── layout ── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  header { padding: 18px 32px; border-bottom: 1px solid var(--border);
+           display: flex; align-items: baseline; gap: 20px; }
+  header h1 { font-family: var(--font-head); font-size: 1.65rem;
+              letter-spacing: .03em; }
+  header span { font-size: .72rem; color: var(--muted); }
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── sidebar ── */
+  .sidebar {
+    width: 310px; min-width: 270px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow-y: auto;
+    padding: 24px 20px;
+  }
+  .sidebar h2 { font-family: var(--font-head); font-size: 1.1rem;
+                margin-bottom: 18px; border-bottom: 1px solid var(--border);
+                padding-bottom: 8px; }
+  label { display: block; font-size: .72rem; color: var(--muted);
+          margin-bottom: 4px; margin-top: 14px; text-transform: uppercase;
+          letter-spacing: .08em; }
+  input[type=text], input[type=number] {
+    width: 100%; padding: 8px 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-body); font-size: .85rem;
+    border-radius: 4px; outline: none; transition: border .2s;
+  }
+  input:focus { border-color: var(--accent2); }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+  input[type=range] {
+    flex: 1; accent-color: var(--accent2); cursor: pointer;
+  }
+  .val-badge {
+    min-width: 46px; text-align: right;
+    font-size: .82rem; color: var(--accent2); font-weight: 500;
+  }
+  .sum-row {
+    margin-top: 18px; padding: 10px 12px;
+    background: var(--bg); border-radius: 6px;
+    font-size: .8rem; display: flex; justify-content: space-between;
+    border: 1px solid var(--border);
+  }
+  .sum-ok  { color: #57cc99; }
+  .sum-err { color: var(--accent1); }
+
+  .btn {
+    margin-top: 18px; width: 100%; padding: 10px;
+    background: var(--accent1); color: #fff; border: none;
+    font-family: var(--font-body); font-size: .85rem;
+    border-radius: 4px; cursor: pointer; transition: opacity .2s;
+    letter-spacing: .05em;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-sec {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); margin-top: 8px;
+  }
+  .btn-sec:hover { border-color: var(--accent2); color: var(--accent2); opacity: 1; }
+
+  /* ── sample table ── */
+  .sample-list { margin-top: 24px; }
+  .sample-list h2 { font-family: var(--font-head); font-size: 1rem;
+                    border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 10px; }
+  .sample-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 4px; font-size: .75rem;
+    margin-bottom: 4px; background: var(--bg); border: 1px solid var(--border);
+    cursor: pointer; transition: border-color .2s;
+  }
+  .sample-item:hover { border-color: var(--accent2); }
+  .swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sample-vals { color: var(--muted); margin-left: auto; font-size: .7rem; }
+  .del-btn { background: none; border: none; color: var(--muted); cursor: pointer;
+             font-size: .9rem; padding: 0 2px; line-height: 1;
+             transition: color .15s; }
+  .del-btn:hover { color: var(--accent1); }
+
+  /* ── legend ── */
+  .legend { margin-top: 24px; }
+  .legend h2 { font-family: var(--font-head); font-size: 1rem;
+               border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 10px; }
+  .leg-item { display: flex; align-items: center; gap: 8px;
+              font-size: .72rem; margin-bottom: 6px; }
+  .leg-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; opacity: .75; }
+
+  /* ── canvas area ── */
+  .canvas-area {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px;
+    overflow: hidden;
+  }
+  canvas { max-width: 100%; max-height: 100%;
+           filter: drop-shadow(0 4px 24px rgba(0,0,0,.5)); }
+
+  /* ── tooltip ── */
+  #tooltip {
+    position: fixed; background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 12px; border-radius: 6px; font-size: .75rem;
+    pointer-events: none; display: none; z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  #tooltip b { color: var(--accent2); }
+
+  /* ── export bar ── */
+  .export-bar {
+    padding: 10px 24px; border-top: 1px solid var(--border);
+    background: var(--surface); display: flex; gap: 12px; align-items: center;
+    font-size: .72rem; color: var(--muted);
+  }
+  .export-bar button {
+    padding: 5px 14px; background: transparent;
+    border: 1px solid var(--border); color: var(--text);
+    font-family: var(--font-body); font-size: .72rem;
+    border-radius: 4px; cursor: pointer; transition: border-color .2s;
+  }
+  .export-bar button:hover { border-color: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <h1>Crystal · Glass · Vesicle</h1>
+    <span>Volcanic Rock Ternary Classification</span>
+  </header>
+
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <h2>Add Sample Point</h2>
+
+      <label>Sample Name</label>
+      <input type="text" id="sampleName" placeholder="e.g. BAS-01" value="Sample-1">
+
+      <label>Crystal (%)</label>
+      <div class="slider-row">
+        <input type="range" id="slCrystal" min="0" max="100" value="30"
+               oninput="syncSliders('Crystal')">
+        <span class="val-badge" id="vCrystal">30</span>
+      </div>
+
+      <label>Glass (%)</label>
+      <div class="slider-row">
+        <input type="range" id="slGlass" min="0" max="100" value="50"
+               oninput="syncSliders('Glass')">
+        <span class="val-badge" id="vGlass">50</span>
+      </div>
+
+      <label>Vesicle (%)</label>
+      <div class="slider-row">
+        <input type="range" id="slVesicle" min="0" max="100" value="20"
+               oninput="syncSliders('Vesicle')">
+        <span class="val-badge" id="vVesicle">20</span>
+      </div>
+
+      <div class="sum-row">
+        <span>Sum</span>
+        <span id="sumDisplay" class="sum-ok">= 100%</span>
+      </div>
+
+      <button class="btn" onclick="addSample()">▸ Plot Sample</button>
+      <button class="btn btn-sec" onclick="clearSamples()">✕ Clear All Samples</button>
+
+      <!-- sample list -->
+      <div class="sample-list">
+        <h2>Plotted Samples</h2>
+        <div id="sampleList"><em style="color:var(--muted);font-size:.72rem">None yet.</em></div>
+      </div>
+
+      <!-- natural-field legend -->
+      <div class="legend">
+        <h2>Natural Fields</h2>
+        <div id="legendList"></div>
+      </div>
+
+    </aside>
+
+    <!-- CANVAS -->
+    <div class="canvas-area">
+      <canvas id="ternary"></canvas>
+    </div>
+
+  </div><!-- .main -->
+
+  <!-- EXPORT BAR -->
+  <div class="export-bar">
+    <span>Export:</span>
+    <button onclick="exportPNG()">Download PNG</button>
+    <button onclick="exportCSV()">Download CSV</button>
+  </div>
+
+</div><!-- .app -->
+
+<div id="tooltip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  DATA — Natural Fields
+//  Each entry: { name, color, pts: [[crystal, glass, vesicle], ...] }
+// ═══════════════════════════════════════════════════════════════════
+const FIELDS = [
+  {
+    name: "Obsidian",
+    color: "#4a4e88",
+    pts: [[0,95,5],[0,100,0],[5,95,0],[5,90,5]]
+  },
+  {
+    name: "Dense Lavas (basalt/andesite)",
+    color: "#b5441e",
+    pts: [[40,55,5],[70,28,2],[75,22,3],[60,35,5],[45,50,5]]
+  },
+  {
+    name: "Scoriae",
+    color: "#e07b27",
+    pts: [[10,45,45],[25,35,40],[35,30,35],[20,40,40],[10,50,40]]
+  },
+  {
+    name: "Pumices",
+    color: "#7570b3",
+    pts: [[1,20,79],[5,20,75],[10,25,65],[5,30,65],[1,25,74]]
+  },
+  {
+    name: "Reticulites",
+    color: "#3aafa9",
+    pts: [[0,5,95],[1,10,89],[3,12,85],[1,8,91],[0,6,94]]
+  },
+  {
+    name: "Tachylite / Sideromelane",
+    color: "#006d77",
+    pts: [[0,88,12],[0,80,20],[5,78,17],[8,82,10],[3,90,7]]
+  },
+  {
+    name: "Vitrophyres",
+    color: "#c9a227",
+    pts: [[25,65,10],[40,55,5],[45,50,5],[35,55,10],[25,68,7]]
+  },
+  {
+    name: "Porphyritic Lavas",
+    color: "#e07f50",
+    pts: [[40,50,10],[60,33,7],[65,30,5],[55,38,7],[42,48,10]]
+  },
+  {
+    name: "Hyaloclastites / Palagonite",
+    color: "#219ebc",
+    pts: [[0,55,45],[5,55,40],[10,50,40],[8,48,44],[2,52,46]]
+  },
+  {
+    name: "Cumulates",
+    color: "#7d1f2a",
+    pts: [[80,18,2],[90,9,1],[95,5,0],[100,0,0],[85,14,1]]
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+let samples = [];   // {name, crystal, glass, vesicle, color}
+const PALETTE = ["#e63946","#a8dadc","#f4d58d","#8ecae6","#fb8500",
+                 "#06d6a0","#f72585","#b5e48c","#fca311","#c77dff"];
+let sampleIdx = 0;
+
+// ═══════════════════════════════════════════════════════════════════
+//  TERNARY MATH
+// ═══════════════════════════════════════════════════════════════════
+// Returns [x_frac, y_frac] relative to triangle (bottom-left = crystal,
+// bottom-right = glass, top = vesicle).
+function tern2frac(crystal, glass, vesicle) {
+  const t = crystal + glass + vesicle;
+  const c = crystal/t, g = glass/t, v = vesicle/t;
+  return [g + v*0.5, v * Math.sqrt(3)/2];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CANVAS DRAW
+// ═══════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('ternary');
+const ctx    = canvas.getContext('2d');
+
+const DARK = {
+  bg:      '#1a1a1e',
+  tri:     '#ffffff',
+  grid:    'rgba(255,255,255,0.12)',
+  tick:    'rgba(255,255,255,0.55)',
+  label:   '#e8e8e0',
+  corner:  '#a8dadc',
+};
+
+function resize() {
+  const area   = document.querySelector('.canvas-area');
+  const size   = Math.min(area.clientWidth - 60, area.clientHeight - 40, 700);
+  canvas.width  = size;
+  canvas.height = size;
+  draw();
+}
+
+// Map fractional [0..1] coords to canvas pixels (with margins).
+let M; // margin object — set in draw()
+
+function frac2px(fx, fy) {
+  // triangle sits in a square; height of equilateral = sqrt(3)/2 ≈ 0.866
+  const triH = Math.sqrt(3)/2;
+  const cW = canvas.width  - M.l - M.r;
+  const cH = canvas.height - M.t - M.b;
+  const scale = Math.min(cW, cH / triH);
+  const offX  = M.l + (cW - scale)/2;
+  const offY  = M.t + cH - (cH - scale*triH)/2;
+  return [offX + fx * scale, offY - fy * scale];
+}
+
+function tern2px(c,g,v) {
+  const [fx,fy] = tern2frac(c,g,v);
+  return frac2px(fx,fy);
+}
+
+function draw() {
+  M = { l:60, r:60, t:60, b:70 };
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#1a1a1e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawTriangleBg();
+  drawGrid();
+  drawFields();
+  drawTicks();
+  drawAxisLabels();
+  drawSamples();
+}
+
+function drawTriangleBg() {
+  const [x0,y0] = tern2px(100, 0,  0);  // crystal (bottom-left)
+  const [x1,y1] = tern2px(0,  100, 0);  // glass   (bottom-right)
+  const [x2,y2] = tern2px(0,   0, 100); // vesicle (top)
+
+  ctx.beginPath();
+  ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.lineTo(x2,y2); ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fill();
+  ctx.strokeStyle = DARK.tri;
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // corner text
+  const cf = {font:'bold 13px IBM Plex Mono, monospace', fill:DARK.corner};
+  ctx.font = cf.font; ctx.fillStyle = cf.fill; ctx.textAlign = 'center';
+  ctx.fillText('Crystal', x0, y0+18);
+  ctx.fillText('(100%)',   x0, y0+32);
+  ctx.fillText('Glass',   x1, y1+18);
+  ctx.fillText('(100%)',  x1, y1+32);
+  ctx.fillText('Vesicle', x2, y2-16);
+  ctx.fillText('(100%)',  x2, y2-4);
+}
+
+function drawGrid() {
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = DARK.grid;
+  ctx.lineWidth = 0.8;
+  for (let i = 1; i < 10; i++) {
+    const v = i * 10;
+    // iso-crystal
+    {const [ax,ay]=tern2px(v,100-v,0); const [bx,by]=tern2px(v,0,100-v);
+     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();}
+    // iso-glass
+    {const [ax,ay]=tern2px(0,v,100-v); const [bx,by]=tern2px(100-v,v,0);
+     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();}
+    // iso-vesicle
+    {const [ax,ay]=tern2px(0,100-v,v); const [bx,by]=tern2px(100-v,0,v);
+     ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();}
+  }
+  ctx.setLineDash([]);
+}
+
+function drawFields() {
+  for (const f of FIELDS) {
+    const coords = f.pts.map(([c,g,v])=>tern2px(c,g,v));
+    ctx.beginPath();
+    ctx.moveTo(coords[0][0], coords[0][1]);
+    for (let i=1;i<coords.length;i++) ctx.lineTo(coords[i][0], coords[i][1]);
+    ctx.closePath();
+    ctx.fillStyle   = f.color + 'aa';  // semi-transparent
+    ctx.strokeStyle = f.color + 'dd';
+    ctx.lineWidth   = 1.2;
+    ctx.fill();
+    ctx.stroke();
+
+    // centroid label
+    const cx = coords.reduce((s,p)=>s+p[0],0)/coords.length;
+    const cy = coords.reduce((s,p)=>s+p[1],0)/coords.length;
+    ctx.font = 'bold 8px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // shadow for readability
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(f.name.split('/')[0].trim(), cx, cy);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawTicks() {
+  ctx.font = '10px IBM Plex Mono, monospace';
+  ctx.fillStyle = DARK.tick;
+  for (let i = 1; i < 10; i++) {
+    const v = i * 10;
+    // Crystal axis (left edge, increasing upward)
+    {
+      const [ax,ay] = tern2px(v, 100-v, 0);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(v, ax-7, ay);
+    }
+    // Glass axis (bottom edge, increasing right)
+    {
+      const [ax,ay] = tern2px(100-v, v, 0);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(v, ax, ay+6);
+    }
+    // Vesicle axis (right edge, increasing up-left)
+    {
+      const [ax,ay] = tern2px(0, 100-v, v);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(v, ax+7, ay);
+    }
+  }
+}
+
+function drawAxisLabels() {
+  ctx.font = 'bold 12px IBM Plex Mono, monospace';
+  ctx.fillStyle = DARK.label;
+  ctx.textBaseline = 'middle';
+
+  // Bottom (Glass)
+  const [bx,by] = tern2px(50,50,0);
+  ctx.textAlign = 'center';
+  ctx.fillText('Glass (%)', bx, by+46);
+
+  // Left (Crystal) — rotate
+  const [lx,ly] = tern2px(50, 0, 50);
+  ctx.save();
+  ctx.translate(lx-48, ly);
+  ctx.rotate(-Math.PI/3);
+  ctx.textAlign = 'center';
+  ctx.fillText('Crystal (%)', 0, 0);
+  ctx.restore();
+
+  // Right (Vesicle) — rotate
+  const [rx,ry] = tern2px(0,50,50);
+  ctx.save();
+  ctx.translate(rx+52, ry);
+  ctx.rotate(Math.PI/3);
+  ctx.textAlign = 'center';
+  ctx.fillText('Vesicle (%)', 0, 0);
+  ctx.restore();
+}
+
+function drawSamples() {
+  for (const s of samples) {
+    const [px,py] = tern2px(s.crystal, s.glass, s.vesicle);
+    // star-shaped marker
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.fillStyle   = s.color;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth   = 1.5;
+    drawStar(ctx, 0, 0, 5, 9, 4);
+    ctx.restore();
+
+    // label
+    ctx.font = 'bold 9px IBM Plex Mono, monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+    ctx.fillText(s.name, px+8, py-2);
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawStar(ctx, cx, cy, outerR, innerR, n) {
+  ctx.beginPath();
+  for (let i=0;i<n*2;i++) {
+    const r  = i%2===0 ? outerR : innerR;
+    const a  = (i*Math.PI/n) - Math.PI/2;
+    i===0 ? ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a))
+           : ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SLIDERS
+// ═══════════════════════════════════════════════════════════════════
+function syncSliders(changed) {
+  const sliders = ['Crystal','Glass','Vesicle'];
+  const vals = sliders.map(n=>+document.getElementById('sl'+n).value);
+  const total = vals.reduce((a,b)=>a+b,0);
+
+  sliders.forEach((n,i)=>{
+    document.getElementById('v'+n).textContent = vals[i];
+  });
+
+  const disp = document.getElementById('sumDisplay');
+  if (total === 100) {
+    disp.textContent = '= 100% ✓';
+    disp.className = 'sum-ok';
+  } else {
+    disp.textContent = `= ${total}%  (needs 100)`;
+    disp.className = 'sum-err';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SAMPLE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+function addSample() {
+  const c = +document.getElementById('slCrystal').value;
+  const g = +document.getElementById('slGlass').value;
+  const v = +document.getElementById('slVesicle').value;
+  const n = document.getElementById('sampleName').value.trim() || `S-${sampleIdx+1}`;
+
+  if (c+g+v !== 100) {
+    alert(`Values must sum to 100. Current sum = ${c+g+v}.`);
+    return;
+  }
+
+  samples.push({ name:n, crystal:c, glass:g, vesicle:v,
+                 color: PALETTE[sampleIdx % PALETTE.length] });
+  sampleIdx++;
+
+  // auto-increment name
+  const match = n.match(/^(.*?)(\d+)$/);
+  document.getElementById('sampleName').value = match
+    ? match[1]+(+match[2]+1) : n+'-2';
+
+  renderSampleList();
+  draw();
+}
+
+function deleteSample(i) {
+  samples.splice(i, 1);
+  renderSampleList();
+  draw();
+}
+
+function clearSamples() {
+  samples = [];
+  sampleIdx = 0;
+  renderSampleList();
+  draw();
+}
+
+function renderSampleList() {
+  const el = document.getElementById('sampleList');
+  if (!samples.length) {
+    el.innerHTML = '<em style="color:var(--muted);font-size:.72rem">None yet.</em>';
+    return;
+  }
+  el.innerHTML = samples.map((s,i)=>`
+    <div class="sample-item">
+      <span class="swatch" style="background:${s.color}"></span>
+      <span>${s.name}</span>
+      <span class="sample-vals">C:${s.crystal} G:${s.glass} V:${s.vesicle}</span>
+      <button class="del-btn" onclick="deleteSample(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  LEGEND
+// ═══════════════════════════════════════════════════════════════════
+function buildLegend() {
+  document.getElementById('legendList').innerHTML = FIELDS.map(f=>`
+    <div class="leg-item">
+      <span class="leg-swatch" style="background:${f.color}"></span>
+      <span>${f.name}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TOOLTIP on hover
+// ═══════════════════════════════════════════════════════════════════
+const tooltip = document.getElementById('tooltip');
+
+canvas.addEventListener('mousemove', e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Check if hovering over a sample
+  for (const s of samples) {
+    const [px,py] = tern2px(s.crystal, s.glass, s.vesicle);
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (Math.hypot((mx*scaleX-px),(my*scaleY-py)) < 14) {
+      tooltip.innerHTML = `<b>${s.name}</b><br>
+        Crystal: ${s.crystal}%<br>
+        Glass: ${s.glass}%<br>
+        Vesicle: ${s.vesicle}%`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX+16)+'px';
+      tooltip.style.top  = (e.clientY+8) +'px';
+      return;
+    }
+  }
+  tooltip.style.display = 'none';
+});
+canvas.addEventListener('mouseleave',()=>{ tooltip.style.display='none'; });
+
+// ═══════════════════════════════════════════════════════════════════
+//  EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportPNG() {
+  const link = document.createElement('a');
+  link.download = 'ternary_crystal_glass_vesicle.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function exportCSV() {
+  if (!samples.length) { alert('No samples to export.'); return; }
+  const rows = ['Name,Crystal(%),Glass(%),Vesicle(%)'];
+  samples.forEach(s=>rows.push(`${s.name},${s.crystal},${s.glass},${s.vesicle}`));
+  const blob = new Blob([rows.join('\n')], {type:'text/csv'});
+  const link = document.createElement('a');
+  link.download = 'samples.csv';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('resize', resize);
+buildLegend();
+syncSliders('Crystal');
+resize();
+</script>
+</body>
+</html>
