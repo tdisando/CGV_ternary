@@ -1,4 +1,4 @@
-# CGV_ternary
+# Crystal, Glass, and Vesicle Ternary Diagram
 Plotting Crystal, Glass, and Vesicle normalised components
 
 ## About me
