@@ -10,9 +10,9 @@
 ## 🌋 About
 
 This tool provides an interactive web-based ternary diagram for classifying and visualizing volcanic rocks according to their normalized proportions of:
-- **Crystal** (solid phases)
-- **Glass** (amorphous phase)
-- **Vesicle** (porosity)
+- **Crystal** (solid phases or differentiation signatures)
+- **Glass** (amorphous phase of solidified melt)
+- **Vesicle** (exsolved volatile or porosity)
 
 The classification scheme is inspired by seminal work in volcanology and petrology:
 - **Fisher** (1966) — Foundational ternary classification framework
@@ -56,7 +56,7 @@ The classification scheme is inspired by seminal work in volcanology and petrolo
 
 ## 📊 Classification Fields
 
-The diagram includes 10 natural volcanic rock classification fields:
+The diagram includes 10 natural volcanic rock classification fields (rough estimation):
 
 | Field | Characteristics |
 |-------|-----------------|
@@ -84,21 +84,6 @@ Coordinates are normalized such that **Crystal + Glass + Vesicle = 100%**.
 
 ---
 
-## 🛠️ Technical Details
-
-**Built with:**
-- Vanilla **HTML5** + **CSS3** + **JavaScript**
-- HTML5 **Canvas API** for rendering
-- No external dependencies (self-contained)
-
-**Browser Support:**
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari (latest)
-- Mobile browsers with HTML5 Canvas support
-
----
-
 ## 📚 References
 
 1. **Fisher, R. V.** (1966). "Geology of the Crater Lake Caldera, Oregon." *U.S. Geological Survey Professional Paper*, 513. https://doi.org/10.1016/0012-8252(66)90010-9
@@ -106,26 +91,6 @@ Coordinates are normalized such that **Crystal + Glass + Vesicle = 100%**.
 2. **Schmid, R.** (1981). "Descriptive nomenclature and classification of pyroclastic deposits and fragments: Recommendations of the IUGS Subcommission on the Systematics of Igneous Rocks." *Journal of Volcanology and Geothermal Research*, 8(3-4). https://doi.org/10.1007/BF01822152
 
 3. **Pettijohn, F. J., Potter, P. E., & Siever, R.** (1975). *Sand and Sandstone* (2nd ed.). Springer-Verlag. https://doi.org/10.1007/978-1-4612-1066-5
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! To contribute:
-
-1. **Fork** this repository
-2. **Create a feature branch**: `git checkout -b feature/your-improvement`
-3. **Make your changes** (e.g., add classification fields, improve UI, optimize calculations)
-4. **Test thoroughly** in multiple browsers
-5. **Submit a pull request** with a clear description of changes
-
-**Contribution ideas:**
-- Additional classification schemes
-- Export to GeoJSON or other formats
-- Dark/light theme toggle
-- Multi-language support
-- Batch sample upload
-- API integration for sample data
 
 ---
 
@@ -148,17 +113,3 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fi
 - Inspired by classic volcanology literature and the IUGS nomenclature system
 - Built for geologists, volcanologists, and petrology researchers
 - Special thanks to all contributors and users providing feedback
-
----
-
-## 📞 Support
-
-For issues, suggestions, or questions:
-- **Open a GitHub Issue**: [Create Issue](https://github.com/tdisando/CGV_ternary/issues)
-- **Submit a Pull Request**: [New PR](https://github.com/tdisando/CGV_ternary/pulls)
-- **Visit the Live App**: [https://tdisando.github.io/CGV_ternary/](https://tdisando.github.io/CGV_ternary/)
-
----
-
-**Last Updated:** April 30, 2026  
-**Maintainer:** [@tdisando](https://github.com/tdisando)
