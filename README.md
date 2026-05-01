@@ -113,3 +113,5 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fi
 - Inspired by classic volcanology literature and the IUGS nomenclature system
 - Built for geologists, volcanologists, and petrology researchers
 - Special thanks to all contributors and users providing feedback
+
+*Made with ❤️ for the volcanology community*
